@@ -37,6 +37,7 @@ public class LevelGenerator : MonoBehaviour
     private MapTileInfo[] houseTiles;
 
     private MapTileCtrl[,] mapTiles;
+    private int[,] mapTilesType;
 
     private const float waterBias = 0.2f; // how many tiles in one will be water
 
@@ -72,7 +73,8 @@ public class LevelGenerator : MonoBehaviour
         levelWidth = Mathf.Clamp(levelWidth, minLevelSize, maxLevelSize);
         levelHeight = Mathf.Clamp(levelHeight, minLevelSize, maxLevelSize);
         mapTiles = new MapTileCtrl[levelWidth,levelHeight];
-
+        mapTilesType = new int[levelWidth,levelHeight];
+        
         // set cam params
         if (!myCameraCtrl && CameraCtrl.Instance)
             myCameraCtrl = CameraCtrl.Instance;
@@ -83,8 +85,6 @@ public class LevelGenerator : MonoBehaviour
             myCameraCtrl.transform.position = new Vector3(startPoint.x, startPoint.y, -5);
             myCameraCtrl.SetMapSize(levelWidth,levelHeight);
         }
-        Stopwatch watch = new Stopwatch();
-        watch.Start();
 
         // todo can be dependent on camera current size
         int startX = (int)startPoint.x - CameraCtrl.maxCameraTileHeight - CameraCtrl.camLimitPonder;
@@ -128,11 +128,11 @@ public class LevelGenerator : MonoBehaviour
             mapTiles[hor, vert].name = houseTiles[tileNum].name;
             mapTiles[hor, vert].tileLvl = houseTiles[tileNum].level;
             mapTiles[hor, vert].SetSprite(houseTiles[tileNum].tileSprite);
+            // we know this is house type, goes after water and land tiles
+            mapTilesType[hor, vert] = tileNum + waterTiles.Length + terrainTiles.Length;
         }
-        levelInitialised = true;
 
-        watch.Stop();
-        Debug.Log(watch.Elapsed.TotalSeconds.ToString());
+        levelInitialised = true;
     }
 
     public void CameraMoved(float currX, float currY)
@@ -161,13 +161,25 @@ public class LevelGenerator : MonoBehaviour
 
     private void CreateMapPart(int startX, int startY, int endX, int endY, bool isFirstBuild)
     {
+        //create level basis
+        if(isFirstBuild)
+            for (int vert = 0; vert < levelSizeHeight; vert++)
+            {
+                for (int hor = 0; hor < levelSizeWidth; hor++)
+                {
+                    mapTilesType[hor, vert] = -1;
+                }
+            }
+
         //create playing field
         for (int vert = startY; vert <= endY; vert++)
         {
             for (int hor = startX; hor <= endX; hor++)
             {
+                // safety for buildings, they have levels, keep them in scene
                 if (mapTiles[hor, vert] != null && !isFirstBuild)
                     continue;
+
                 // todo object pooling
                 GameObject go = GameObject.Instantiate(groundTilePrefab, new Vector3(hor, vert, 0), new Quaternion(),
                     groundParentTr);
@@ -175,40 +187,81 @@ public class LevelGenerator : MonoBehaviour
                 mapTiles[hor, vert].x = hor;
                 mapTiles[hor, vert].y = vert;
 
-                // tile type settings
-                if (waterTiles.Length > 0)
+                // decide if tile is allready decided on the type
+                int thisTileType = mapTilesType[hor, vert];
+                if (thisTileType != -1)
                 {
-                    // there is water on this map
-                    bool isWater = Random.Range(0f, 1f) < waterBias;
-                    //todo grouping of water tiles
-                    if (isWater)
+                    // tile has been decided, just load that tile
+                    if (thisTileType < terrainTiles.Length)
                     {
-                        // this specific tile is water
-                        int tileNum = 0;
-                        if (waterTiles.Length > 1)
-                        {
-                            // random tile
-                            tileNum = Random.Range(0, waterTiles.Length);
-                        }
+                        // terrain tile
+                        mapTiles[hor, vert].type = MapTileCtrl.TileType.Terrain;
+                        mapTiles[hor, vert].name = terrainTiles[thisTileType].name;
+                        mapTiles[hor, vert].SetSprite(terrainTiles[thisTileType].tileSprite);
+                        continue;
+                    }
+                    else if (thisTileType < terrainTiles.Length + waterTiles.Length)
+                    {
+                        // water tile
                         mapTiles[hor, vert].type = MapTileCtrl.TileType.Water;
-                        mapTiles[hor, vert].name = waterTiles[tileNum].name;
-                        mapTiles[hor, vert].SetSprite(waterTiles[tileNum].tileSprite);
+                        mapTiles[hor, vert].name = waterTiles[thisTileType - terrainTiles.Length].name;
+                        mapTiles[hor, vert].SetSprite(waterTiles[thisTileType - terrainTiles.Length].tileSprite);
+                        continue;
+                    }
+                    else
+                    {
+                        // its building, but we got that covered. Just in case, provide code
+                        /*
+                        mapTiles[hor, vert].type = MapTileCtrl.TileType.House;
+                        mapTiles[hor, vert].name = houseTiles[tileType - terrainTiles.Length - waterTiles.Length].name;
+                        mapTiles[hor, vert].SetSprite(houseTiles[tileType - terrainTiles.Length - waterTiles.Length].tileSprite);
+                        */
                         continue;
                     }
                 }
-                // this specific tile is terain
-                if (terrainTiles.Length > 0)
+                else
                 {
-                    int tileNum = 0;
-                    if (terrainTiles.Length > 1)
+                    // tile is "fresh" create it from scratch
+
+                    // tile type settings
+                    if (waterTiles.Length > 0)
                     {
-                        // random tile
-                        tileNum = Random.Range(0, terrainTiles.Length);
-                        // todo grouping of similar tiles by bias
+                        // there is water on this map
+                        bool isWater = Random.Range(0f, 1f) < waterBias;
+                        //todo grouping of water tiles
+                        if (isWater)
+                        {
+                            // this specific tile is water
+                            int tileNum = 0;
+                            if (waterTiles.Length > 1)
+                            {
+                                // random tile
+                                tileNum = Random.Range(0, waterTiles.Length);
+                            }
+                            mapTiles[hor, vert].type = MapTileCtrl.TileType.Water;
+                            mapTiles[hor, vert].name = waterTiles[tileNum].name;
+                            mapTiles[hor, vert].SetSprite(waterTiles[tileNum].tileSprite);
+                            // we know this is water type, goes after  land tiles
+                            mapTilesType[hor, vert] = tileNum + terrainTiles.Length;
+                            continue;
+                        }
                     }
-                    mapTiles[hor, vert].type = MapTileCtrl.TileType.Terrain;
-                    mapTiles[hor, vert].name = terrainTiles[tileNum].name;
-                    mapTiles[hor, vert].SetSprite(terrainTiles[tileNum].tileSprite);
+                    // this specific tile is terain
+                    if (terrainTiles.Length > 0)
+                    {
+                        int tileNum = 0;
+                        if (terrainTiles.Length > 1)
+                        {
+                            // random tile
+                            tileNum = Random.Range(0, terrainTiles.Length);
+                            // todo grouping of similar tiles by bias
+                        }
+                        mapTiles[hor, vert].type = MapTileCtrl.TileType.Terrain;
+                        mapTiles[hor, vert].name = terrainTiles[tileNum].name;
+                        mapTiles[hor, vert].SetSprite(terrainTiles[tileNum].tileSprite);
+                        // we know this is terain type, goes before all else
+                        mapTilesType[hor, vert] = tileNum;
+                    }
                 }
             }
         }

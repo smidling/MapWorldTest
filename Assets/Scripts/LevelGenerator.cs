@@ -123,7 +123,7 @@ public class LevelGenerator : MonoBehaviour
                 // no pooling needed here, house tiles are scarce and constant
                 GameObject go = GameObject.Instantiate(groundTilePrefab, new Vector3(hor, vert, 0), new Quaternion(),
                     groundParentTr);
-                go.AddComponent<MapTileCtrl>();
+//                go.AddComponent<MapTileCtrl>();
                 mapTiles[hor, vert] = go.GetComponent<MapTileCtrl>();
             }
             mapTiles[hor, vert].type = MapTileCtrl.TileType.House;
@@ -178,8 +178,8 @@ public class LevelGenerator : MonoBehaviour
         {
             for (int hor = startX; hor <= endX; hor++)
             {
-                if (mapTiles[hor, vert] != null && !isFirstBuild)
-                    continue;
+                if(mapTiles[hor, vert] != null && !isFirstBuild)
+                        continue;
 
                 // todo object pooling
                 //                GameObject go = GameObject.Instantiate(groundTilePrefab, new Vector3(hor, vert, 0), new Quaternion(),
@@ -188,7 +188,7 @@ public class LevelGenerator : MonoBehaviour
                 go.transform.position = new Vector3(hor, vert, 0);
 //                go.transform.parent = groundParentTr;
                 go.SetActive(true);
-                go.AddComponent<MapTileCtrl>();
+//                go.AddComponent<MapTileCtrl>();
                 mapTiles[hor, vert] = go.GetComponent<MapTileCtrl>();
                 mapTiles[hor, vert].x = hor;
                 mapTiles[hor, vert].y = vert;
@@ -325,5 +325,10 @@ public class LevelGenerator : MonoBehaviour
         levelSizeWidth = width;
         levelSizeHeight = height;
         levelHousesNum = houses;
+    }
+
+    public void RemoveMeFromList(int x, int y)
+    {
+        mapTiles[x, y] = null;
     }
 }

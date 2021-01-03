@@ -39,8 +39,9 @@ public class MapTileCtrl : MonoBehaviour
             || (int) transform.position.y < cameraTr.position.y - cameraDistancePonder
             || (int) transform.position.y > cameraTr.position.y + cameraDistancePonder)
         {
+            LevelGenerator.Instance.RemoveMeFromList(x,y);
             gameObject.SetActive(false);
-            Destroy(this);
+//            Destroy(this);
             //        Destroy(gameObject);
         }
     }

@@ -34,16 +34,22 @@ public class MapTileCtrl : MonoBehaviour
         if (type == TileType.House)
             return;
         // check if too far away from the cam
-        if((int)transform.position.x < cameraTr.position.x - cameraDistancePonder 
-            || (int)transform.position.x > cameraTr.position.x + cameraDistancePonder
-            || (int)transform.position.y < cameraTr.position.y - cameraDistancePonder
-            || (int)transform.position.y > cameraTr.position.y + cameraDistancePonder)
-            Destroy(gameObject);
+        if ((int) transform.position.x < cameraTr.position.x - cameraDistancePonder
+            || (int) transform.position.x > cameraTr.position.x + cameraDistancePonder
+            || (int) transform.position.y < cameraTr.position.y - cameraDistancePonder
+            || (int) transform.position.y > cameraTr.position.y + cameraDistancePonder)
+        {
+            gameObject.SetActive(false);
+            Destroy(this);
+            //        Destroy(gameObject);
+        }
     }
     
 
     public void SetSprite(Sprite newSprite)
     {
+        if (!mySpriteRenderer)
+            mySpriteRenderer = transform.GetComponent<SpriteRenderer>();
         mySpriteRenderer.sprite = newSprite;
     }
 

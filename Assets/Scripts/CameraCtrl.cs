@@ -23,7 +23,7 @@ public class CameraCtrl : MonoBehaviour
 
     private const int startCameraTileHeight = 8; // tiles vertical
     public const int minCameraTileHeight = 8; // tiles vertical
-    public const int maxCameraTileHeight = 32; // tiles vertical
+    public const int maxCameraTileHeight = 24; // tiles vertical
     
 
     [SerializeField]

@@ -120,8 +120,10 @@ public class LevelGenerator : MonoBehaviour
             }
             if (mapTiles[hor, vert] == null)
             {
+                // no pooling needed here, house tiles are scarce and constant
                 GameObject go = GameObject.Instantiate(groundTilePrefab, new Vector3(hor, vert, 0), new Quaternion(),
                     groundParentTr);
+                go.AddComponent<MapTileCtrl>();
                 mapTiles[hor, vert] = go.GetComponent<MapTileCtrl>();
             }
             mapTiles[hor, vert].type = MapTileCtrl.TileType.House;
@@ -176,13 +178,17 @@ public class LevelGenerator : MonoBehaviour
         {
             for (int hor = startX; hor <= endX; hor++)
             {
-                // safety for buildings, they have levels, keep them in scene
                 if (mapTiles[hor, vert] != null && !isFirstBuild)
                     continue;
 
                 // todo object pooling
-                GameObject go = GameObject.Instantiate(groundTilePrefab, new Vector3(hor, vert, 0), new Quaternion(),
-                    groundParentTr);
+                //                GameObject go = GameObject.Instantiate(groundTilePrefab, new Vector3(hor, vert, 0), new Quaternion(),
+                //                    groundParentTr);
+                GameObject go = TilePool.Instance.GetTile();
+                go.transform.position = new Vector3(hor, vert, 0);
+//                go.transform.parent = groundParentTr;
+                go.SetActive(true);
+                go.AddComponent<MapTileCtrl>();
                 mapTiles[hor, vert] = go.GetComponent<MapTileCtrl>();
                 mapTiles[hor, vert].x = hor;
                 mapTiles[hor, vert].y = vert;
